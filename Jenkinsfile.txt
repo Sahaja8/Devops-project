@@ -1,0 +1,36 @@
+pipeline {
+    agent any
+
+    stages {
+        stage('Build Docker Image') {
+            steps {
+                script {
+                    echo "Building Docker image..."
+                    dockerImage = docker.build("my-html-site:${BUILD_NUMBER}", ".")
+                }
+            }
+        }
+
+        stage('Run Container') {
+            steps {
+                script {
+                    echo "Running container..."
+                    // Stop old container if running
+                    sh 'docker rm -f html-container || true'
+                    // Run new container on port 8081
+                    sh 'docker run -d -p 8081:80 --name html-container my-html-site:${BUILD_NUMBER}'
+                }
+            }
+        }
+    }
+
+    post {
+        success {
+            echo "Build and container run successful!"
+            echo "Access at: http://<your-machine-ip>:8081"
+        }
+        failure {
+            echo "Build failed. Check logs!"
+        }
+    }
+}
